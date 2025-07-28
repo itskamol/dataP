@@ -1,0 +1,48 @@
+{
+  "file1": {
+    "path": "data/1/district.json",
+    "type": "json",
+    "delimiter": null
+  },
+  "file2": {
+    "path": "data/2/districts.csv",
+    "type": "csv",
+    "delimiter": ";"
+  },
+  "mapping_fields": [
+    {
+      "file1_col": "districtNameLat",
+      "file2_col": "?column?",
+      "match_type": "fuzzy",
+      "use_normalization": true,
+      "case_sensitive": false,
+      "weight": 0.9
+    }
+  ],
+  "output_columns": {
+    "from_file1": [
+      "_id",
+      "regionId",
+      "districtId",
+      "districtSoato",
+      "districtNameCrl",
+      "districtNameLat"
+    ],
+    "from_file2": [
+      "id",
+      "?column?",
+      "region_id"
+    ]
+  },
+  "settings": {
+    "output_format": "json",
+    "matched_output_path": "main/results/ditricts",
+    "file1_output_prefix": "f1_",
+    "file2_output_prefix": "f2_",
+    "confidence_threshold": 80,
+    "matching_type": "one-to-one",
+    "unmatched_files": {
+      "generate": true
+    }
+  }
+}

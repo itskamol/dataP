@@ -1,0 +1,203 @@
+# Alert rules for file processing system
+groups:
+  - name: file-processing-alerts
+    rules:
+      # High error rate alert
+      - alert: HighErrorRate
+        expr: rate(flask_http_request_exceptions_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          service: file-processing
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value }} errors per second for the last 5 minutes"
+
+      # High response time alert
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(flask_http_request_duration_seconds_bucket[5m])) > 5
+        for: 3m
+        labels:
+          severity: warning
+          service: file-processing
+        annotations:
+          summary: "High response time detected"
+          description: "95th percentile response time is {{ $value }} seconds"
+
+      # High memory usage alert
+      - alert: HighMemoryUsage
+        expr: (process_resident_memory_bytes / 1024 / 1024) > 800
+        for: 5m
+        labels:
+          severity: warning
+          service: file-processing
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is {{ $value }}MB"
+
+      # High CPU usage alert
+      - alert: HighCPUUsage
+        expr: rate(process_cpu_seconds_total[5m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: file-processing
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is {{ $value }}%"
+
+      # Pod restart alert
+      - alert: PodRestarting
+        expr: increase(kube_pod_container_status_restarts_total[1h]) > 0
+        for: 0m
+        labels:
+          severity: warning
+          service: file-processing
+        annotations:
+          summary: "Pod is restarting"
+          description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} has restarted {{ $value }} times in the last hour"
+
+      # Service down alert
+      - alert: ServiceDown
+        expr: up{job="file-processing-web"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: file-processing
+        annotations:
+          summary: "Service is down"
+          description: "File processing service has been down for more than 1 minute"
+
+      # Redis connection alert
+      - alert: RedisConnectionFailed
+        expr: redis_connected_clients == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: file-processing
+        annotations:
+          summary: "Redis connection failed"
+          description: "No clients connected to Redis for more than 2 minutes"
+
+      # Disk space alert
+      - alert: LowDiskSpace
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 10
+        for: 5m
+        labels:
+          severity: critical
+          service: file-processing
+        annotations:
+          summary: "Low disk space"
+          description: "Disk space is below 10% ({{ $value }}% remaining)"
+
+      # File processing queue alert
+      - alert: HighProcessingQueueSize
+        expr: file_processing_queue_size > 100
+        for: 5m
+        labels:
+          severity: warning
+          service: file-processing
+        annotations:
+          summary: "High processing queue size"
+          description: "Processing queue has {{ $value }} items waiting"
+
+      # Matching accuracy alert
+      - alert: LowMatchingAccuracy
+        expr: file_processing_matching_accuracy < 0.7
+        for: 10m
+        labels:
+          severity: warning
+          service: file-processing
+        annotations:
+          summary: "Low matching accuracy detected"
+          description: "Matching accuracy is {{ $value }}, below threshold of 0.7"
+
+      # Processing throughput alert
+      - alert: LowProcessingThroughput
+        expr: file_processing_throughput_records_per_second < 100
+        for: 5m
+        labels:
+          severity: warning
+          service: file-processing
+        annotations:
+          summary: "Low processing throughput detected"
+          description: "Processing throughput is {{ $value }} records/second, below expected threshold"
+
+      # Cache hit ratio alert
+      - alert: LowCacheHitRatio
+        expr: file_processing_cache_hit_ratio < 0.5
+        for: 10m
+        labels:
+          severity: warning
+          service: file-processing
+        annotations:
+          summary: "Low cache hit ratio detected"
+          description: "Cache hit ratio is {{ $value }}, indicating potential performance issues"
+
+      # User satisfaction alert
+      - alert: LowUserSatisfaction
+        expr: file_processing_user_satisfaction_score < 0.6
+        for: 15m
+        labels:
+          severity: warning
+          service: file-processing
+        annotations:
+          summary: "Low user satisfaction score detected"
+          description: "User satisfaction score is {{ $value }}, indicating poor user experience"
+
+      # Resource utilization alerts
+      - alert: HighResourceUtilization
+        expr: file_processing_resource_utilization_percent > 90
+        for: 5m
+        labels:
+          severity: critical
+          service: file-processing
+        annotations:
+          summary: "High resource utilization detected"
+          description: "{{ $labels.resource_type }} utilization is {{ $value }}%, approaching capacity limits"
+
+      # Data volume processing alert
+      - alert: HighDataVolumeProcessing
+        expr: rate(file_processing_data_volume_bytes_total[5m]) > 100000000  # 100MB/s
+        for: 2m
+        labels:
+          severity: warning
+          service: file-processing
+        annotations:
+          summary: "High data volume processing detected"
+          description: "Data processing rate is {{ $value }} bytes/second, may indicate heavy load"
+
+  - name: kubernetes-alerts
+    rules:
+      # Node not ready alert
+      - alert: NodeNotReady
+        expr: kube_node_status_condition{condition="Ready",status="true"} == 0
+        for: 5m
+        labels:
+          severity: critical
+          service: kubernetes
+        annotations:
+          summary: "Node is not ready"
+          description: "Node {{ $labels.node }} has been not ready for more than 5 minutes"
+
+      # Pod crash looping alert
+      - alert: PodCrashLooping
+        expr: rate(kube_pod_container_status_restarts_total[15m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+          service: kubernetes
+        annotations:
+          summary: "Pod is crash looping"
+          description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is crash looping"
+
+      # Deployment replica mismatch alert
+      - alert: DeploymentReplicaMismatch
+        expr: kube_deployment_spec_replicas != kube_deployment_status_available_replicas
+        for: 5m
+        labels:
+          severity: warning
+          service: kubernetes
+        annotations:
+          summary: "Deployment replica mismatch"
+          description: "Deployment {{ $labels.deployment }} has {{ $labels.spec_replicas }} desired replicas but {{ $labels.available_replicas }} available"

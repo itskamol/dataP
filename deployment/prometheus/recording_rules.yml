@@ -1,0 +1,132 @@
+# Recording rules for file processing system
+# Pre-calculate commonly used metrics for better performance
+
+groups:
+  - name: file-processing-recording-rules
+    interval: 30s
+    rules:
+      # HTTP request rate calculations
+      - record: file_processing:http_request_rate_5m
+        expr: rate(flask_http_requests_total[5m])
+      
+      - record: file_processing:http_error_rate_5m
+        expr: rate(flask_http_request_exceptions_total[5m]) / rate(flask_http_requests_total[5m])
+      
+      - record: file_processing:http_request_duration_p95_5m
+        expr: histogram_quantile(0.95, rate(flask_http_request_duration_seconds_bucket[5m]))
+      
+      - record: file_processing:http_request_duration_p99_5m
+        expr: histogram_quantile(0.99, rate(flask_http_request_duration_seconds_bucket[5m]))
+      
+      # File processing metrics
+      - record: file_processing:files_processed_rate_5m
+        expr: rate(file_processing_files_processed_total[5m])
+      
+      - record: file_processing:file_processing_success_rate_5m
+        expr: rate(file_processing_files_processed_total{status="success"}[5m]) / rate(file_processing_files_processed_total[5m])
+      
+      - record: file_processing:file_processing_duration_p95_5m
+        expr: histogram_quantile(0.95, rate(file_processing_duration_seconds_bucket[5m]))
+      
+      # Matching operation metrics
+      - record: file_processing:matching_operations_rate_5m
+        expr: rate(file_processing_matching_operations_total[5m])
+      
+      - record: file_processing:matching_success_rate_5m
+        expr: rate(file_processing_matching_operations_total{status="success"}[5m]) / rate(file_processing_matching_operations_total[5m])
+      
+      - record: file_processing:matching_duration_p95_5m
+        expr: histogram_quantile(0.95, rate(file_processing_matching_duration_seconds_bucket[5m]))
+      
+      # Cache performance metrics
+      - record: file_processing:cache_hit_rate_5m
+        expr: rate(file_processing_cache_operations_total{result="hit"}[5m]) / rate(file_processing_cache_operations_total[5m])
+      
+      # System resource utilization
+      - record: file_processing:memory_utilization_percent
+        expr: (system_memory_usage_bytes{type="used"} / system_memory_usage_bytes{type="total"}) * 100
+      
+      - record: file_processing:disk_utilization_percent
+        expr: (system_disk_usage_bytes{type="used"} / system_disk_usage_bytes{type="total"}) * 100
+      
+      # Business metrics aggregations
+      - record: file_processing:data_volume_rate_5m
+        expr: rate(file_processing_data_volume_bytes_total[5m])
+      
+      - record: file_processing:average_throughput_5m
+        expr: avg(file_processing_throughput_records_per_second)
+      
+      - record: file_processing:average_user_satisfaction_5m
+        expr: avg(file_processing_user_satisfaction_score)
+      
+      # Application health indicators
+      - record: file_processing:service_availability_5m
+        expr: up{job="file-processing-web"}
+      
+      - record: file_processing:queue_backlog_ratio
+        expr: file_processing_queue_size / 100  # Normalize to 0-1 scale assuming 100 is max capacity
+      
+      # Performance indicators by algorithm
+      - record: file_processing:matching_accuracy_by_algorithm
+        expr: avg by (algorithm) (file_processing_matching_accuracy)
+      
+      - record: file_processing:matching_duration_by_algorithm_p95_5m
+        expr: histogram_quantile(0.95, rate(file_processing_matching_duration_seconds_bucket[5m])) by (algorithm)
+
+  - name: kubernetes-recording-rules
+    interval: 30s
+    rules:
+      # Pod resource utilization
+      - record: kubernetes:pod_memory_utilization_percent
+        expr: (container_memory_working_set_bytes / container_spec_memory_limit_bytes) * 100
+      
+      - record: kubernetes:pod_cpu_utilization_percent
+        expr: rate(container_cpu_usage_seconds_total[5m]) * 100
+      
+      # Node resource utilization
+      - record: kubernetes:node_memory_utilization_percent
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100
+      
+      - record: kubernetes:node_cpu_utilization_percent
+        expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+      
+      # Application availability
+      - record: kubernetes:deployment_availability_percent
+        expr: (kube_deployment_status_replicas_available / kube_deployment_spec_replicas) * 100
+      
+      # Pod restart rate
+      - record: kubernetes:pod_restart_rate_1h
+        expr: increase(kube_pod_container_status_restarts_total[1h])
+
+  - name: business-metrics-recording-rules
+    interval: 60s
+    rules:
+      # Daily processing volumes
+      - record: file_processing:daily_files_processed
+        expr: increase(file_processing_files_processed_total[24h])
+      
+      - record: file_processing:daily_data_volume_gb
+        expr: increase(file_processing_data_volume_bytes_total[24h]) / (1024^3)
+      
+      # Hourly success rates
+      - record: file_processing:hourly_success_rate
+        expr: increase(file_processing_files_processed_total{status="success"}[1h]) / increase(file_processing_files_processed_total[1h])
+      
+      # Weekly performance trends
+      - record: file_processing:weekly_avg_processing_time
+        expr: avg_over_time(file_processing:file_processing_duration_p95_5m[7d])
+      
+      - record: file_processing:weekly_avg_throughput
+        expr: avg_over_time(file_processing:average_throughput_5m[7d])
+      
+      # User experience metrics
+      - record: file_processing:user_satisfaction_trend_24h
+        expr: avg_over_time(file_processing_user_satisfaction_score[24h])
+      
+      # Error analysis
+      - record: file_processing:error_rate_by_type_1h
+        expr: avg_over_time(file_processing_error_rate_by_type[1h])
+      
+      # Resource efficiency metrics
+      - record: file_processing:resource_efficiency_score
+        expr: (file_processing:average_throughput_5m / (file_processing:memory_utilization_percent + file_processing_resource_utilization_percent{resource_type="cpu"})) * 100

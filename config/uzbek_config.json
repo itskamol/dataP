@@ -1,0 +1,49 @@
+{
+  "file1": {
+    "path": "data/uzbek_regions.csv",
+    "type": "csv",
+    "delimiter": ";",
+    "encoding": "utf-8"
+  },
+  "file2": {
+    "path": "data/uzbek_districts.json",
+    "type": "json",
+    "delimiter": null,
+    "encoding": "utf-8"
+  },
+  "mapping_fields": [
+    {
+      "file1_col": "region_name_uz",
+      "file2_col": "parent_region",
+      "match_type": "fuzzy",
+      "use_normalization": true,
+      "case_sensitive": false,
+      "weight": 1.0
+    }
+  ],
+  "output_columns": {
+    "from_file1": [
+      "id",
+      "region_name_uz",
+      "region_name_lat",
+      "soato"
+    ],
+    "from_file2": [
+      "district_id",
+      "district_name",
+      "parent_region",
+      "district_code"
+    ]
+  },
+  "settings": {
+    "output_format": "both",
+    "matched_output_path": "results/uzbek_matched",
+    "file1_output_prefix": "region_",
+    "file2_output_prefix": "district_",
+    "confidence_threshold": 70,
+    "matching_type": "one-to-many",
+    "unmatched_files": {
+      "generate": true
+    }
+  }
+}

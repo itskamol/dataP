@@ -1,0 +1,41 @@
+# Dockerfile for CLI-only container
+FROM python:3.11-slim as cli-runtime
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+# Create non-root user
+RUN groupadd -r cliuser && useradd -r -g cliuser cliuser
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Create application directories
+RUN mkdir -p /app/data /app/uploads /app/logs /app/temp && \
+    chown -R cliuser:cliuser /app
+
+# Set working directory
+WORKDIR /app
+
+# Copy requirements and install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY --chown=cliuser:cliuser . .
+
+# Set permissions
+RUN chmod +x /app/cli.py && \
+    chown -R cliuser:cliuser /app
+
+# Switch to non-root user
+USER cliuser
+
+# Default command
+ENTRYPOINT ["python", "cli.py"]
+CMD ["--help"]

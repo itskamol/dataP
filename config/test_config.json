@@ -1,0 +1,45 @@
+{
+  "file1": {
+    "path": "data/file1.csv",
+    "type": "csv",
+    "delimiter": ","
+  },
+  "file2": {
+    "path": "data/file2.json",
+    "type": "json",
+    "delimiter": null
+  },
+  "mapping_fields": [
+    {
+      "file1_col": "name",
+      "file2_col": "full_name",
+      "match_type": "fuzzy",
+      "use_normalization": true,
+      "case_sensitive": false,
+      "weight": 1.0
+    }
+  ],
+  "output_columns": {
+    "from_file1": [
+      "id",
+      "name",
+      "region"
+    ],
+    "from_file2": [
+      "id",
+      "full_name",
+      "district"
+    ]
+  },
+  "settings": {
+    "output_format": "csv",
+    "matched_output_path": "results/matched",
+    "file1_output_prefix": "f1_",
+    "file2_output_prefix": "f2_",
+    "confidence_threshold": 75,
+    "matching_type": "one-to-one",
+    "unmatched_files": {
+      "generate": true
+    }
+  }
+}

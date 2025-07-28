@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: file-processing-config
+  namespace: file-processing
+  labels:
+    app.kubernetes.io/name: file-processing-system
+    app.kubernetes.io/component: config
+data:
+  # Application configuration
+  FLASK_ENV: "production"
+  LOG_LEVEL: "INFO"
+  REDIS_URL: "redis://redis-service:6379/0"
+  MAX_UPLOAD_SIZE: "100MB"
+  WORKER_PROCESSES: "4"
+  CACHE_TTL: "3600"
+  
+  # Matching configuration
+  DEFAULT_THRESHOLD: "0.8"
+  MAX_RECORDS_PER_BATCH: "10000"
+  ENABLE_GPU_ACCELERATION: "false"
+  
+  # Security configuration
+  SESSION_TIMEOUT: "1800"
+  MAX_CONCURRENT_JOBS: "10"
+  
+  # Monitoring configuration
+  METRICS_ENABLED: "true"
+  HEALTH_CHECK_INTERVAL: "30"

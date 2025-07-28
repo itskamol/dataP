@@ -1,0 +1,1 @@
+# Infrastructure layer - External concerns like file I/O, logging, caching
